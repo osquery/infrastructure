@@ -26,11 +26,12 @@ https://console.aws.amazon.com/organizations/home
 
 | Name             | Account ID   | Email                         | Purpose                |
 | ---------------- | ------------ | ----------------------------- | ---------------------- |
-| osquery-org      | 032511868142 | infra+aws@osquery.io          | Top Level & Billing    |
-| osquery-identity | 834249036484 | infra+aws-identity@osquery.io | IAM: humans and groups |
-| osquery-logs     | 072219116274 | infra+aws-logs@osquery.io     | Cloudwatch Logs        |
-| osquery-infra    | 107349553668 | infra+aws-infra@osquery.io    | Semi-static infra      |
-| osquery-storage  | 680817131363 | infra+aws-storage@osquery.io  | Packages, artifacts    |
+| [osquery-org](https://signin.aws.amazon.com/switchrole?roleName=IdentityAccountAccessRole&account=032511868142)      | 032511868142 | infra+aws@osquery.io          | Top Level & Billing    |
+| [osquery-identity](https://signin.aws.amazon.com/switchrole?roleName=IdentityAccountAccessRole&account=834249036484) | 834249036484 | infra+aws-identity@osquery.io | IAM: humans and groups |
+| [osquery-logs](https://signin.aws.amazon.com/switchrole?roleName=IdentityAccountAccessRole&account=072219116274)     | 072219116274 | infra+aws-logs@osquery.io     | Cloudwatch Logs        |
+| [osquery-infra](https://signin.aws.amazon.com/switchrole?roleName=IdentityAccountAccessRole&account=107349553668)    | 107349553668 | infra+aws-infra@osquery.io    | Semi-static infra      |
+| [osquery-storage](https://signin.aws.amazon.com/switchrole?roleName=IdentityAccountAccessRole&account=680817131363)  | 680817131363 | infra+aws-storage@osquery.io  | Packages, artifacts    |
+| [osquery-dev](https://signin.aws.amazon.com/switchrole?roleName=IdentityAccountAccessRole&account=204725418487)      | 204725418487 | infra+aws-dev@osquery.io      | Dev and test hosts. Initial CI work |
 
 There is a default role for cross sharing: `OrganizationAccountAccessRole` but this does not apply to our set up.
 This default assumes identity accounts are created in the `osquery-org`, this trust is setup between the child accounts
@@ -40,26 +41,36 @@ For each child account we should create a `IdentityAccountAccessRole` role that 
 
 ### AWS Account Setup Process
 
+AWS account setup is a somewhat cumbersome manual process. Notes about it.
+
 Useful URLs:
 
 - https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_access.html
 
-The initial boostrapping is manual. It was configured via:
+#### Initial AWS account
 
-1. Create the AWS org level account.
+The first thing we did was create the `osquery-org` account. This is
+the toplevel account. It was created using the normal AWS signup flow,
+then converted to being an org account.
 
-- Normal AWS signup flow
-- Convert it to an org level
+#### Subsequent Child Accounts
 
-2. Create new child accounts
-3. **IMPORTANT**: For all child accounts, you must set a proper root password and MFA
+Sometimes we need to create additional AWS child accounts. There are a
+couple of steps to that.
 
-- This requires you go through a forgot password flow.
+1. Login to AWS
+2. Find your way to the organization screen
+   * https://console.aws.amazon.com/organizations/home?region=us-east-2#/accounts
+3. Click "Add account"
+   * Name and email should conform to the convention in the table above
+   * You can leave IAM role name to the default `OrganizationAccountAccessRole`
+4. **IMPORTANT**: Set a root password and MFA (see below)
 
-4. Initial user
-
-- An initial `seph-initial` user was created
-- And granted administrator access
+**IMPORTANT**: When an AWS account is created this way, it does _not_
+have a root password of MFA set. This means the account is vulnerable
+to a class of takeover attacks. The recommend approach is to use the
+"forgot password" flow to set a root password and MFA device. We use a
+virtual MFA device in the same 1password entry.
 
 ### User Account Setup Process
 
@@ -68,4 +79,7 @@ You can log in to the web console and use IAM to create a `$USERNAME-identity` a
 
 Then to manage resources on other accounts you can assume an Administrator role.
 
-Use the following link but set the appropriate Account ID: https://signin.aws.amazon.com/switchrole?roleName=IdentityAccountAccessRole&account=107349553668.
+To login, you need to use one of the magic switchrole links. For
+example:
+https://signin.aws.amazon.com/switchrole?roleName=IdentityAccountAccessRole&account=107349553668
+(See the account table for others)
